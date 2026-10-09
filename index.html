@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Biblio Atelier — Observable 3D Library Specimen Studio</title>
+  <meta name="description" content="Explore Library Science, Classification Systems (DDC & LCC), MARC21 Metadata, Preservation Science, and Library Management through an interactive 3D studio." />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#f7f0e7" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#12100e" media="(prefers-color-scheme: dark)" />
+
+  <!-- Apply theme before paint to avoid flash -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem('biblio_theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = stored === 'light' || stored === 'dark' ? stored : (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
+
+  <!-- Google Fonts: Cormorant Garamond & DM Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css?v=pure3" />
+
+  <!-- Three.js r128 + orbit controls. Loaded from one origin so a single outage
+       degrades gracefully rather than mixing CDN failure modes. -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body class="mode-walkthrough">
+
+  <!-- Topbar Header -->
+  <header class="topbar">
+    <button class="mobile-library-trigger" id="mobile-library-trigger" type="button" aria-label="Toggle specimen library" aria-expanded="false" aria-controls="volume-list">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+    </button>
+
+    <button class="brand" type="button" aria-label="Biblio Atelier home">
+      <strong>Biblio Atelier<sup>✦</sup></strong>
+      <em>Observable 3D Library Specimen Studio</em>
+    </button>
+
+    <nav class="main-nav" aria-label="Primary navigation">
+      <div class="nav-experience-switch" role="tablist" aria-label="Experience Mode">
+        <button class="exp-switch-btn active" id="btn-mode-walkthrough" type="button" role="tab" aria-selected="true" title="Walk through the 3D Library Building">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 4v16"/><path d="M17 4v16"/><path d="M21 4H7a4 4 0 0 0-4 4v8a4 4 0 0 0 4 4h14"/></svg>
+          Library Walk
+        </button>
+        <button class="exp-switch-btn" id="btn-mode-specimen" type="button" role="tab" aria-selected="false" title="Examine Isolated Specimens on the Plinth">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.436 13.171 9.025 14.975 10.829 9.564 16.24 7.76"/></svg>
+          Specimen Atelier
+        </button>
+      </div>
+
+      <button class="active" id="nav-explore-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.436 13.171 9.025 14.975 10.829 9.564 16.24 7.76"/></svg>
+        Classification
+      </button>
+      <button id="nav-metadata-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M9 13a4.5 4.5 0 0 0 3-4"/><path d="M12 13h4"/><path d="M12 8h8"/></svg>
+        Metadata &amp; MARC
+      </button>
+      <button id="nav-sandbox-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        Call # Sandbox
+      </button>
+      <button id="nav-reader-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/></svg>
+        Library Guide
+      </button>
+      <button id="nav-notes-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg>
+        Notes &amp; Badges
+      </button>
+    </nav>
+
+    <label class="search-box">
+      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+      <input type="text" id="search-input" placeholder="Search DDC, MARC, preservation…" value="" />
+    </label>
+
+    <div class="topbar-actions">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode" aria-pressed="false">
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+        </svg>
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M21 14.5A8.5 8.5 0 1 1 9.5 3a7 7 0 0 0 11.5 11.5z"/>
+        </svg>
+      </button>
+
+      <button class="record-btn" id="record-demo-btn" type="button" title="Record Screen / Demo Video" aria-label="Record Video">
+        <span class="rec-dot" aria-hidden="true"></span>
+        <span>Record Video</span>
+      </button>
+
+      <button class="profile" id="open-cert-btn" title="View MLS Certification Progress">
+        <span>MLS</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="app-shell">
+    <div class="workspace">
+
+      <!-- Left Sidebar: Library Science Modules -->
+      <aside class="organ-library">
+        <div class="panel-heading">
+          <span>Observable Specimen Library</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button id="saved-modules-btn" type="button" aria-label="Show saved modules only" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"/></svg>
+            </button>
+            <button id="close-satchel-drawer" type="button" class="drawer-close-btn" aria-label="Close Satchel Drawer" title="Close Drawer [Esc]">✕</button>
+          </div>
+        </div>
+
+        <div class="organ-list" id="volume-list">
+          <!-- Populated by js/app.js -->
+        </div>
+
+        <button class="view-all" id="view-all-specimens" type="button">
+          View all 9 specimens
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+
+        <blockquote>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/></svg>
+          <p>Learning is an act<br/>of quiet observation.</p>
+          <em>Study the specimen</em>
+        </blockquote>
+      </aside>
+
+      <!-- Center 3D Interactive Specimen Viewer -->
+      <section class="viewer-shell" aria-label="Interactive 3D Library Architecture Viewer">
+        <div class="viewer-glow" id="viewer-glow" style="--organ-accent:#b85c37"></div>
+
+        <!-- Three.js Canvas Mounting Container -->
+        <div class="three-mount" id="three-mount">
+          <div id="walkthrough-canvas-container" style="width:100%; height:100%; position:absolute; inset:0;"></div>
+          <div id="specimen-canvas-container" style="width:100%; height:100%; position:absolute; inset:0; display:none;"></div>
+        </div>
+
+        <!-- In-World Conservator's Workbench HUD Header -->
+        <div class="workbench-hud-header" id="workbench-hud-header">
+          <div class="workbench-station-pill">
+            <span class="station-icon">🏛️</span>
+            <span class="station-title" id="workbench-station-title">Conservator's Workbench · Grand Reading Hall</span>
+          </div>
+          <button type="button" class="workbench-stand-btn" id="btn-stand-up-workbench" title="Stand up and resume walking library [Esc]">
+            <span class="stand-icon">🚶</span>
+            <span>Stand Up from Desk</span>
+            <kbd class="stand-kbd">[Esc]</kbd>
+          </button>
+        </div>
+
+        <!-- 3D Walkthrough Immersive HUD -->
+        <div class="walkthrough-hud" id="walkthrough-hud">
+          <!-- Unified Diegetic Top Navigation Ribbon -->
+          <header class="game-hud-ribbon" id="game-hud-ribbon">
+            <!-- Left: Satchel [Tab] -->
+            <div class="hud-ribbon-left">
+              <button type="button" class="hud-pill-btn" id="btn-toggle-satchel" title="Open Scholar's Satchel (9 Specimens) [Tab]" aria-expanded="false" aria-controls="volume-list">
+                <span class="hud-pill-icon">👜</span>
+                <span class="hud-pill-label">Satchel</span>
+                <kbd class="hud-pill-kbd">Tab</kbd>
+              </button>
+            </div>
+
+            <!-- Center: Location Compass Cartouche & Atmospheric Weather -->
+            <div class="hud-ribbon-center">
+              <div class="walkthrough-compass-box" id="walkthrough-compass-box">
+                <div class="compass-dial" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 19 21 12 17 5 21 12 2"/></svg>
+                </div>
+                <div class="compass-info">
+                  <strong id="compass-location-text">Grand Foyer Colonnade</strong>
+                </div>
+                <span class="cartouche-divider" aria-hidden="true">·</span>
+                <div class="walkthrough-weather-box" id="walkthrough-weather-box" role="radiogroup" aria-label="Library time of day and atmosphere">
+                  <button type="button" class="weather-btn active" data-weather="morning" aria-pressed="true" title="Morning Crisp Sunlit Atmosphere">☀️ Morning</button>
+                  <button type="button" class="weather-btn" data-weather="golden" aria-pressed="false" title="Golden Hour Warm Archival Amber">🌅 Golden Hour</button>
+                  <button type="button" class="weather-btn" data-weather="rain" aria-pressed="false" title="Nocturnal Rainstorm &amp; Distant Thunder">🌧️ Rain</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Lantern [L], Dossier [I], Archival Menu [M] -->
+            <div class="hud-ribbon-right">
+              <div class="walkthrough-lantern-box" id="walkthrough-lantern-box">
+                <button type="button" class="lantern-hud-btn active" id="btn-toggle-lantern" title="Toggle Handheld Brass Lantern [L]" aria-pressed="true">
+                  <span class="lantern-flame-dot"></span>
+                  <span class="lantern-label">Lantern</span>
+                  <span class="lantern-status" id="lantern-status-text">LIT</span>
+                  <kbd class="lantern-kbd">[L]</kbd>
+                </button>
+              </div>
+
+              <button type="button" class="hud-pill-btn" id="btn-toggle-dossier" title="Open Curatorial Dossier &amp; Field Notes [I]" aria-expanded="false">
+                <span class="hud-pill-icon">📜</span>
+                <span class="hud-pill-label">Dossier</span>
+                <kbd class="hud-pill-kbd">I</kbd>
+              </button>
+
+              <button type="button" class="hud-pill-btn menu-toggle-btn" id="btn-toggle-archive-menu" title="Open Archival Curriculum &amp; Catalog Database [M]" aria-expanded="false">
+                <span class="hud-pill-icon">🏛️</span>
+                <span class="hud-pill-label">Catalog Menu</span>
+                <kbd class="hud-pill-kbd">M</kbd>
+              </button>
+            </div>
+          </header>
+
+          <!-- Station 1: Interactive Card Catalog Pullout Modal (Opened via [E] on Station 1) -->
+          <div class="catalog-drawer-modal" id="catalog-drawer-modal" hidden role="dialog" aria-modal="true" aria-label="Oak Card Catalog Drawer">
+            <div class="catalog-drawer-box">
+              <div class="drawer-tray-header">
+                <div class="drawer-brass-pull">
+                  <div class="brass-label-holder">
+                    <span class="brass-label-text">DRAWER 04 · 810–820 AMERICAN LIT</span>
+                  </div>
+                </div>
+                <button type="button" class="drawer-close-btn" id="close-catalog-drawer" aria-label="Close card drawer">×</button>
+              </div>
+              <div class="drawer-cards-track" id="drawer-cards-track">
+                <!-- Dynamically populated index cards -->
+              </div>
+              <div class="drawer-controls">
+                <button type="button" class="drawer-nav-btn" id="card-prev-btn" aria-label="Previous index card">← Previous Card</button>
+                <span class="drawer-card-counter" id="drawer-card-counter">Card 1 of 4</span>
+                <button type="button" class="drawer-nav-btn" id="card-next-btn" aria-label="Next index card">Next Card →</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Center Landing Screen Arrival Prompt (Step 0) -->
+          <div class="foyer-arrival-hero" id="foyer-arrival-hero">
+            <div class="foyer-hero-heraldry">
+              <span class="foyer-heraldic-flourish">✦ ✦ ✦</span>
+              <span class="foyer-sub">Observable 3D Library &amp; Specimen Studio</span>
+              <h1 class="foyer-title">The Grand Interactive Library</h1>
+            </div>
+            <div class="foyer-hero-actions">
+              <button type="button" class="foyer-hero-btn primary" id="foyer-walk-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 4v16"/><path d="M17 4v16"/><path d="M21 4H7a4 4 0 0 0-4 4v8a4 4 0 0 0 4 4h14"/></svg>
+                <span>Step Into Library Rooms</span>
+              </button>
+              <button type="button" class="foyer-hero-btn secondary" id="foyer-atelier-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.436 13.171 9.025 14.975 10.829 9.564 16.24 7.76"/></svg>
+                <span>Specimen Workbench</span>
+              </button>
+            </div>
+            <div class="foyer-prompt-badge">
+              <span class="foyer-pulse-icon">✦</span>
+              <span>Scroll down or press <kbd class="foyer-kbd">W</kbd> to explore</span>
+            </div>
+          </div>
+
+          <!-- Unified Exploration Diegetic Prompt (Appears when nearing a station) -->
+          <div class="exploration-hud-prompt" id="exploration-hud-prompt" hidden>
+            <div class="hud-prompt-reticle">
+              <div class="hud-prompt-dot"></div>
+              <div class="hud-prompt-halo"></div>
+            </div>
+            <div class="hud-prompt-card">
+              <div class="hud-prompt-header">
+                <span class="hud-prompt-icon" id="hud-prompt-icon">🏛️</span>
+                <div class="hud-prompt-titles">
+                  <span class="hud-prompt-kicker" id="hud-prompt-kicker">STATION 1 · CIRCULATION DESK</span>
+                  <h3 class="hud-prompt-title" id="hud-prompt-title">The Grand Card Catalog</h3>
+                </div>
+              </div>
+              <div class="hud-prompt-actions" id="hud-prompt-actions">
+                <!-- Dynamically populated contextual action chips -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Secret Celestial Orrery Rotunda HUD & Controls -->
+          <div class="orrery-hud-overlay" id="orrery-hud-overlay" hidden role="region" aria-label="Celestial Orrery Chamber HUD">
+            <div class="orrery-header-card">
+              <div class="orrery-crest">
+                <span class="orrery-icon">🪐</span>
+                <div class="orrery-titles">
+                  <span class="orrery-sub">✦ ANCIENT COPERNICAN ROTUNDA ✦</span>
+                  <strong class="orrery-heading">The Grand Celestial Orrery</strong>
+                </div>
+              </div>
+              <div class="orrery-status-pill">
+                <span class="orrery-tick-dot"></span>
+                <span id="orrery-gear-status">CLOCKWORK GEARS ENGAGED · 4 PLANETS IN SYNCHRONY</span>
+              </div>
+            </div>
+            <div class="orrery-quick-actions">
+              <button type="button" class="orrery-action-btn speed-btn" id="btn-orrery-speed" title="Accelerate clockwork planetary orbit speed [T]">
+                <span id="orrery-speed-label">⚡ Orbit: 1x Speed</span>
+                <kbd class="orrery-kbd">[T]</kbd>
+              </button>
+              <button type="button" class="orrery-action-btn leave-btn" id="btn-leave-orrery" title="Return to Grand Reading Hall [Esc] / [X]">
+                <span>↩ Return to Reading Hall</span>
+                <kbd class="orrery-kbd">[X]</kbd>
+              </button>
+            </div>
+          </div>
+
+          <!-- Pulled Shelf Volume 3D Inspection Lectern Modal -->
+          <div class="shelf-lectern-modal" id="shelf-lectern-modal" hidden role="dialog" aria-modal="true" aria-label="3D Shelf Volume Inspection Lectern">
+            <div class="shelf-lectern-box">
+              <div class="lectern-header">
+                <div class="lectern-crest">
+                  <span class="lectern-crest-icon">🏛️</span>
+                  <div>
+                    <span class="lectern-sub">BIBLIO ATELIER · SPECIAL COLLECTIONS</span>
+                    <strong class="lectern-heading">Reading Lectern Specimen Inspection</strong>
+                  </div>
+                </div>
+                <button type="button" class="drawer-close-btn" id="close-lectern-btn" aria-label="Close lectern inspection">×</button>
+              </div>
+              <div class="lectern-content">
+                <div class="lectern-book-preview" id="lectern-book-preview">
+                  <div class="lectern-cover-card" id="lectern-cover-card">
+                    <div class="lectern-spine-ribs"><i></i><i></i><i></i><i></i><i></i></div>
+                    <div class="lectern-cover-filigree">
+                      <span class="lectern-book-call" id="lectern-book-call">INC-1495-ARIS</span>
+                      <strong class="lectern-book-title" id="lectern-book-title">Aristoteles Graece</strong>
+                      <span class="lectern-book-author" id="lectern-book-author">Aldus Manutius (Venice)</span>
+                      <em class="lectern-book-imprint" id="lectern-book-imprint">Folio Edition · 1495 CE</em>
+                    </div>
+                  </div>
+                </div>
+                <div class="lectern-dossier">
+                  <div class="lectern-field">
+                    <small>CURATORIAL PROVENANCE &amp; CONDITION</small>
+                    <p id="lectern-book-desc">Aldine editio princeps of Aristotle. Five-volume folio set bound in contemporary blind-stamped pigskin over bevelled wooden boards with brass clasps.</p>
+                  </div>
+                  <div class="lectern-stats-grid">
+                    <div class="lectern-stat"><span>FORMAT:</span> <strong id="lectern-stat-format">Chancery Folio</strong></div>
+                    <div class="lectern-stat"><span>BINDING:</span> <strong id="lectern-stat-binding">Pigskin over Oak</strong></div>
+                    <div class="lectern-stat"><span>SEWING:</span> <strong id="lectern-stat-sewing">Alum-Tawed Bands</strong></div>
+                    <div class="lectern-stat"><span>CONSERVATION:</span> <strong id="lectern-stat-status" class="text-success">Stable · Climate Monitored</strong></div>
+                  </div>
+                  <div class="lectern-actions">
+                    <button type="button" class="lectern-btn primary" id="btn-lectern-atelier">
+                      <span>🔬 Inspect on Conservator's Workbench</span>
+                    </button>
+                    <button type="button" class="lectern-btn secondary" id="btn-lectern-read">
+                      <span>📖 Open &amp; Read Volume</span>
+                    </button>
+                    <button type="button" class="lectern-btn tertiary" id="btn-lectern-return">
+                      <span>↩ Return to Shelf [F]</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Station Depth Progress Tracker (Right Side) -->
+          <nav class="station-depth-indicator" id="station-depth-indicator" aria-label="Library Walkthrough Stations">
+            <button type="button" class="station-plan-toggle" id="btn-toggle-floorplan" title="Toggle Archival Floor Plan [K]">
+              <span class="plan-toggle-icon">🗺️</span>
+              <span class="plan-toggle-label">Floor Plan</span>
+              <kbd class="plan-toggle-kbd">K</kbd>
+            </button>
+            <div class="station-depth-content">
+              <span class="depth-title">ARCHIVAL STATIONS</span>
+              <ul class="depth-list">
+                <li class="depth-item active" data-station="0">
+                  <button type="button" class="depth-btn">
+                    <span class="depth-num">00</span>
+                    <span class="depth-name">Grand Foyer</span>
+                  </button>
+                </li>
+                <li class="depth-item" data-station="1">
+                  <button type="button" class="depth-btn">
+                    <span class="depth-num">01</span>
+                    <span class="depth-name">Circulation Desk &amp; Card Index</span>
+                  </button>
+                </li>
+                <li class="depth-item" data-station="2">
+                  <button type="button" class="depth-btn">
+                    <span class="depth-num">02</span>
+                    <span class="depth-name">Grand Reading Hall</span>
+                  </button>
+                </li>
+                <li class="depth-item" data-station="3">
+                  <button type="button" class="depth-btn">
+                    <span class="depth-num">03</span>
+                    <span class="depth-name">Bindery &amp; Conservation Lab</span>
+                  </button>
+                </li>
+                <li class="depth-item" data-station="4">
+                  <button type="button" class="depth-btn">
+                    <span class="depth-num">04</span>
+                    <span class="depth-name">Rare Book Climate Vault</span>
+                  </button>
+                </li>
+              </ul>
+              <div class="depth-track-line" aria-hidden="true"><div class="depth-track-fill" id="depth-track-fill"></div></div>
+            </div>
+          </nav>
+
+          <!-- Ambient Audio Soundscape Pill (Bottom Right) -->
+          <div class="ambient-audio-pill" id="ambient-audio-pill">
+            <button type="button" id="ambient-audio-btn" class="ambient-audio-btn" aria-pressed="false" title="Toggle quiet library ambiance soundscape">
+              <svg class="audio-icon-muted" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+              <svg class="audio-icon-playing" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+              <span id="ambient-audio-label">Library Hush &amp; Rain</span>
+            </button>
+          </div>
+
+          <!-- Bottom Control Tips Pill -->
+          <div class="walkthrough-tips-pill">
+            <span><b>W / S</b> Walk · <b>A / D</b> Strafe</span>
+            <span class="tip-sep">·</span>
+            <span><b>Click / E</b> to inspect</span>
+            <span class="tip-sep">·</span>
+            <button type="button" id="switch-to-specimen-btn" class="tip-switch-btn">Conservator's Workbench →</button>
+          </div>
+        </div>
+
+        <!-- Specimen switch loader (Anatomy-style) -->
+        <div class="model-loader" id="model-loader" hidden role="status" aria-live="polite">
+          <div class="loader-orbit" aria-hidden="true"></div>
+          <strong id="loader-title">Preparing specimen</strong>
+        </div>
+
+        <!-- Guided tour progress -->
+        <div class="tour-progress" id="tour-progress" hidden role="status" aria-live="polite">
+          <span id="tour-progress-label">Guided tour</span>
+          <div class="tour-bar"><i id="tour-bar-fill"></i></div>
+        </div>
+
+        <!-- Screen-space 3D Hotspot Overlay -->
+        <div class="hotspot-overlay" id="hotspot-overlay"></div>
+
+        <!-- Diagnostic Telemetry & Caliper Laser Overlay -->
+        <div class="diagnostic-telemetry-overlay" id="diagnostic-telemetry-overlay" aria-hidden="true">
+          <svg class="telemetry-svg-canvas" id="telemetry-svg-canvas"></svg>
+          <div class="telemetry-badges-layer" id="telemetry-badges-layer"></div>
+        </div>
+
+        <!-- 40× Conservation Optical Micro-Loupe Overlay -->
+        <div class="micro-loupe-lens" id="micro-loupe-lens" hidden aria-hidden="true">
+          <canvas class="loupe-canvas" id="loupe-canvas" width="220" height="220"></canvas>
+          <div class="loupe-reticle-ring">
+            <div class="loupe-crosshair"></div>
+            <div class="loupe-chromatic-halo"></div>
+          </div>
+          <div class="loupe-telemetry">
+            <div class="loupe-mag">40.0× MAGNIFICATION</div>
+            <div class="loupe-sample-label" id="loupe-sample-label">FIBER SURFACE</div>
+            <div class="loupe-coords" id="loupe-coords">λ 400nm · 120µm DEPTH</div>
+          </div>
+        </div>
+
+        <!-- XRF Elemental Spectrometry HUD Overlay -->
+        <div class="xrf-hud-panel" id="xrf-hud-panel" hidden aria-hidden="true">
+          <div class="xrf-header">
+            <div class="xrf-title-group">
+              <span class="xrf-badge">ED-XRF</span>
+              <strong>X-Ray Fluorescence Spectrometer</strong>
+            </div>
+            <div class="xrf-status"><span class="xrf-pulse-dot"></span> <span id="xrf-status-text">40kV · 100µA · ACQUIRING</span></div>
+          </div>
+          <div class="xrf-body">
+            <canvas class="xrf-spectrum-canvas" id="xrf-spectrum-canvas" width="460" height="110"></canvas>
+            <div class="xrf-readouts">
+              <div class="xrf-target-material">
+                <small>DETECTED COMPOSITION / PIGMENT</small>
+                <strong id="xrf-pigment-name">24k Gold Leaf Tooling (Fire-Gilt)</strong>
+                <p id="xrf-pigment-desc">Au: 96.4% · Cu: 3.2% · Ag: 0.4% trace. Gold bole underlayer.</p>
+              </div>
+              <div class="xrf-peaks-list" id="xrf-peaks-list">
+                <span class="xrf-peak-chip au">Au-Lα: 9.71 keV</span>
+                <span class="xrf-peak-chip au">Au-Lβ: 11.44 keV</span>
+                <span class="xrf-peak-chip cu">Cu-Kα: 8.04 keV</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chronological Provenance & Century Aging Timeline HUD Panel -->
+        <div class="provenance-hud-panel" id="provenance-hud-panel" hidden aria-hidden="true">
+          <div class="provenance-header">
+            <div class="provenance-title-group">
+              <span class="provenance-badge" id="provenance-epoch-badge">EPOCH I · 1485 CE</span>
+              <strong id="provenance-epoch-title">Venetian Renaissance Incunabula</strong>
+            </div>
+            <div class="provenance-curator-seal">SEAL: S. MARCI ✦ VERIFIED</div>
+          </div>
+          <div class="provenance-body">
+            <div class="provenance-context">
+              <span class="provenance-location" id="provenance-location">Venice, Atelier of Aldus Manutius</span>
+              <p class="provenance-physical" id="provenance-physical">Pristine white alum-tawed pigskin binding, 24k mirror-burnished gold leaf fillet tooling, unblemished rag cotton paper, gelatin-sized deckle edges.</p>
+            </div>
+            <div class="provenance-metrics-row">
+              <div class="prov-metric">
+                <span class="m-label">ACIDITY</span>
+                <strong class="m-val" id="prov-ph-val">pH 7.8 (Alkaline)</strong>
+                <div class="prov-bar"><i id="prov-ph-bar" style="width: 85%; background: #10b981;"></i></div>
+              </div>
+              <div class="prov-metric">
+                <span class="m-label">FOXING BLOOM</span>
+                <strong class="m-val" id="prov-foxing-val">0.0% (Pristine)</strong>
+                <div class="prov-bar"><i id="prov-foxing-bar" style="width: 0%; background: #f59e0b;"></i></div>
+              </div>
+              <div class="prov-metric">
+                <span class="m-label">COLLAGEN ELASTICITY</span>
+                <strong class="m-val" id="prov-collagen-val">98% (Supple)</strong>
+                <div class="prov-bar"><i id="prov-collagen-bar" style="width: 98%; background: #38bdf8;"></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Micro-Hydration Spot Test & Contact Angle Porosimetry HUD Panel -->
+        <div class="hydration-hud-panel" id="hydration-hud-panel" hidden aria-hidden="true">
+          <div class="hydration-header">
+            <div class="hydration-title-group">
+              <span class="hydration-badge">POROSIMETRY</span>
+              <strong>Micro-Hydration Contact Angle Diagnostic (0.5 µL DI-H₂O)</strong>
+            </div>
+            <div class="hydration-status"><span class="hydration-pulse-dot"></span> <span id="hydration-status-text">PIPETTE ACTIVE · CLICK ON LEAF</span></div>
+          </div>
+          <div class="hydration-body">
+            <div class="hydration-canvas-box">
+              <canvas class="hydration-drop-canvas" id="hydration-drop-canvas" width="220" height="110"></canvas>
+              <div class="hydration-angle-overlay">
+                <span id="hydration-angle-val">θ = 79.4°</span>
+                <small>CONTACT ANGLE</small>
+              </div>
+            </div>
+            <div class="hydration-readouts">
+              <div class="hydration-substrate-info">
+                <small>SUBSTRATE &amp; SIZING PROFILE</small>
+                <strong id="hydration-substrate-name">Gelatin-Sized Rag Cotton Leaf (15th c.)</strong>
+                <p id="hydration-sizing-desc">Capillary absorption rate: 0.038 mm/s. Gelatin sizing intact; high hydrophobic surface tension.</p>
+              </div>
+              <div class="hydration-metrics-chips">
+                <span class="hydration-chip" id="hydration-ink-chip" style="color:#10b981; border-color:#10b98188; background:#10b98122">Ink Friability: Stable (0% Bleed)</span>
+                <span class="hydration-chip" id="hydration-timer-chip" style="color:#38bdf8; border-color:#38bdf888; background:#38bdf822">Uptake: 4.8s Remaining</span>
+                <button type="button" class="blot-action-btn" id="blot-hydration-btn" title="Blot residual moisture with archival cellulose paper">🧻 Blot Moisture</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Layer HUD Indicator Pill -->
+        <div class="layer-hud" id="layer-hud" hidden role="status" aria-live="polite">
+          <span id="layer-hud-text">All Layers</span>
+        </div>
+
+        <!-- Floating callout (tracks selected hotspot like Anatomy Atelier) -->
+        <div class="hotspot-callout" id="hotspot-callout" hidden data-side="right">
+          <div class="callout-body">
+            <button type="button" class="callout-close" id="callout-close" aria-label="Close feature callout">×</button>
+            <b id="callout-title">Feature</b>
+            <small id="callout-desc">Detail</small>
+            <button type="button" class="callout-learn" id="callout-learn">Learn more</button>
+          </div>
+        </div>
+
+        <!-- Specimen Control Toolbar (Anatomy Atelier Interaction Model) -->
+        <!-- Conservator's Workbench Curatorial Console -->
+        <div class="viewer-tools curatorial-console" aria-label="3D Rare Book Conservator's Workbench Controls">
+          <!-- Cluster 1: Codex Handling & Physical Mechanics -->
+          <div class="curatorial-cluster" data-cluster="handling" title="Codex Handling & Physical Mechanics">
+            <span class="cluster-tag">CODEX</span>
+            <button type="button" class="tool-button" data-action="open-cover" title="Open / Close 3D Hardcover Hinge [O]" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              <span>Open Cover</span>
+            </button>
+            <button type="button" class="tool-button" data-action="flip-page" title="Flip Articulated Parchment Leaf [P]" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m14 2-4 4-4-4"/><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><path d="M14 2v6h6"/><path d="M3 15h6"/><path d="m6 12 3 3-3 3"/></svg>
+              <span>Turn Leaf</span>
+            </button>
+            <button type="button" class="tool-button tool-button-explode" data-action="explode" id="tool-explode-btn" title="Exploded View — Disassemble Binding Anatomy & Cords" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 2 3 6h6l-4.5 4 1.7 6.2L12 15l-6.2 3.2L7.5 12 3 8h6z"/><path d="M12 22v-7"/></svg>
+              <span>✦ Explode Anatomy</span>
+            </button>
+            <div class="tool-slider-wrapper" id="explode-slider-box" title="Continuous anatomical disassembly slider">
+              <span class="slider-badge" id="explode-slider-val">0%</span>
+              <input type="range" id="explode-slider" min="0" max="100" value="0" step="1" aria-label="Explosion disassembly percentage" />
+            </div>
+            <button type="button" class="tool-button" data-action="loupe" id="tool-loupe-btn" title="40× Conservation Optical Micro-Loupe (Inspect Pigment, Fibers & Tooling)" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><circle cx="11" cy="11" r="3"/><path d="M11 5v2M11 15v2M5 11h2M15 11h2"/></svg>
+              <span>40× Loupe</span>
+            </button>
+          </div>
+
+          <div class="console-sep" aria-hidden="true"></div>
+
+          <!-- Cluster 2: Archival Illumination -->
+          <div class="curatorial-cluster" data-cluster="illumination" title="Spectroscopic & Curatorial Illumination">
+            <span class="cluster-tag">LIGHTING</span>
+            <button type="button" class="tool-button active" data-action="wavelength-vis" title="Visible Spectrum (400–700 nm Daylight 5500K)" aria-pressed="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+              <span>5500K Visible</span>
+            </button>
+            <button type="button" class="tool-button active" data-action="toggle-lamp" id="tool-lamp-btn" title="Banker's Reading Lamp (Warm Incandescent 2700K)" aria-pressed="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2v1"/><path d="M12 7a5 5 0 0 0-5 5c0 1.93 1.05 3.6 2.6 4.45l.4.22c.6.33 1 .97 1 1.66V19h2v-.67c0-.69.4-1.33 1-1.66l.4-.22A5.002 5.002 0 0 0 17 12a5 5 0 0 0-5-5z"/></svg>
+              <span id="lamp-label">Lamp 2700K</span>
+            </button>
+            <button type="button" class="tool-button" data-action="raking" id="tool-raking-btn" title="Raking Light (8° Grazing Incidence for blind tooling relief & paper cockling)" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/><circle cx="12" cy="12" r="4"/><path d="m20 4-4 4"/></svg>
+              <span>Raking Light</span>
+            </button>
+            <div class="tool-slider-wrapper" id="raking-slider-box" title="Raking light azimuth angle (0°–360°)" style="display:none;">
+              <span class="slider-badge" id="raking-slider-val">45° NW</span>
+              <input type="range" id="raking-slider" min="0" max="360" value="45" step="1" aria-label="Raking light angle" />
+            </div>
+            <button type="button" class="tool-button" data-action="backlight" id="tool-backlight-btn" title="Transmitted Backlight (Expose Laid Paper Watermark & Wire Chain Lines)" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>Backlight</span>
+            </button>
+            <button type="button" class="tool-button" data-action="wavelength-uv" title="Ultraviolet Fluorescence (365 nm for Iron-Gall Ink & Adhesives)" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/><circle cx="12" cy="12" r="4"/></svg>
+              <span>UV 365nm</span>
+            </button>
+          </div>
+
+          <div class="console-sep" aria-hidden="true"></div>
+
+          <!-- Cluster 3: Material Diagnostics & Spatial Tools -->
+          <div class="curatorial-cluster" data-cluster="diagnostics" title="Laboratory Diagnostics & Spatial Reset">
+            <span class="cluster-tag">DIAGNOSTICS</span>
+            <button type="button" class="tool-button" data-action="hydration" id="tool-hydration-btn" title="Micro-Hydration Spot Test & Contact Angle Porosity Diagnostic" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><path d="M12 8v5M12 16h.01"/></svg>
+              <span>Hydration</span>
+            </button>
+            <button type="button" class="tool-button" data-action="timeline" id="tool-timeline-btn" title="Chronological Provenance Timeline (1485 Incunabula → Present Archival)" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/><path d="M16 2v4M8 2v4"/></svg>
+              <span>Provenance</span>
+            </button>
+            <div class="tool-slider-wrapper" id="timeline-slider-box" title="Scrub chronological provenance epoch" style="display:none;">
+              <span class="slider-badge" id="timeline-slider-val">1485 · Incunabula</span>
+              <input type="range" id="timeline-slider" min="0" max="3" value="0" step="1" aria-label="Chronological provenance epoch" />
+            </div>
+            <button type="button" class="tool-button" data-action="xrf" id="tool-xrf-btn" title="XRF Elemental Spectrometry (Gold, Iron, Cinnabar Peaks)" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 6 4-11"/></svg>
+              <span>XRF</span>
+            </button>
+            <button type="button" class="tool-button" data-action="toggle-architecture" id="toggle-arch-btn" title="Toggle between Workbench Codex and Classic Architecture Specimen" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10v4M15 10v4"/></svg>
+              <span>Stacks View</span>
+            </button>
+            <button type="button" class="tool-button" data-action="compare" title="Compare side-by-side with another library specimen" aria-pressed="false">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
+              <span>Compare</span>
+            </button>
+            <button type="button" class="tool-button" data-action="reset" title="Reset Camera View & Active Diagnostics">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              <span>Reset</span>
+            </button>
+          </div>
+        </div>
+
+        <aside class="tip-note" aria-label="Viewer instructions">
+          <span><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/></svg> Tip</span>
+          <p>Drag to rotate · Scroll to zoom<br/>Click books to inspect &amp; read<br/>[ ] switch specimens</p>
+        </aside>
+
+        <!-- 3D Hotspots Index List -->
+        <ul class="hotspot-index" id="hotspot-index-list">
+          <!-- Populated by js/app.js -->
+        </ul>
+
+        <!-- Auto Rotate Switch -->
+        <button class="auto-rotate" type="button" id="auto-rotate-toggle" aria-pressed="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Auto rotate
+          <span class="switch on"><i></i></span>
+        </button>
+
+        <div class="view-caption">
+          <span id="viewer-render-status">Procedural 3D specimen · click books or pins to explore</span>
+          <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:4px; flex-wrap:wrap;">
+            <strong id="view-caption-title" style="margin-right:auto;">Specimen Systema Classificatorium</strong>
+            <button type="button" class="read-shelf-btn return-walkthrough-btn" id="return-walkthrough-btn" title="Return to 3D Library Walkthrough">
+              🏛️ Library Walk
+            </button>
+            <button type="button" class="read-shelf-btn inspect-book-btn" id="caption-inspect-book-btn" title="Inspect 3D Physical Book Binding">
+              📕 Inspect Binding
+            </button>
+            <button type="button" class="read-shelf-btn" id="caption-read-book-btn" title="Open and read the primary shelf book folio">
+              📖 Read Folio
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Detail / Info Panel -->
+      <aside class="info-panel">
+        <div class="info-kicker" id="info-kicker">
+          <span>◇</span> Library Specimen
+        </div>
+
+        <div class="info-title-row">
+          <div>
+            <h1 id="info-title">The Classification Bay Specimen</h1>
+            <em id="info-subtitle">Specimen Locationis Relativae</em>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+            <button id="close-dossier-drawer" type="button" class="drawer-close-btn" aria-label="Close Dossier Drawer" title="Close Drawer [Esc]">✕</button>
+            <span class="specimen-stamp" id="specimen-stamp">🏷</span>
+          </div>
+        </div>
+
+        <p class="description" id="info-desc">
+          An isolated single oak bay specimen showing DDC decimal expansions and LCC alphanumeric relative location.
+        </p>
+
+        <div class="rule"></div>
+
+        <h2>Key facts</h2>
+        <dl class="key-facts" id="key-facts-grid">
+          <!-- Populated by js/app.js -->
+        </dl>
+
+        <div class="medical-note">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <p><b>Scholarly observation</b> <span id="scholarly-note-text">Relative location replaces fixed shelf placement.</span></p>
+        </div>
+
+        <div class="fun-note">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/></svg>
+          <p><b>Did you know</b> <span id="did-you-know-text">Melvil Dewey was a spelling reformer who advocated spelling 'Catalog' as 'Katalog'!</span></p>
+        </div>
+
+        <!-- Practice Panel Container -->
+        <div id="practice-panel-container"></div>
+
+        <button class="lesson-button" id="open-feature-page-btn">
+          Explore this specimen’s feature page
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+
+        <button class="lesson-button" id="view-reader-btn">
+          View full librarian guide
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+
+        <div class="action-grid">
+          <button id="animate-action-btn" type="button" title="Guided hotspot tour">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg>
+            Animate
+          </button>
+          <button id="quiz-action-btn" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+            Quiz
+          </button>
+          <button id="compare-action-btn" type="button" title="Compare specimens">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
+            Compare
+          </button>
+        </div>
+      </aside>
+
+    </div>
+
+    <!-- Compare strip (Anatomy Atelier pattern) -->
+    <section class="compare-strip" id="compare-strip" hidden aria-label="Specimen comparison">
+      <button type="button" class="compare-organ" id="compare-left">
+        <span class="compare-glyph" id="compare-left-glyph" aria-hidden="true">🏷</span>
+        <span>Comparing</span>
+        <strong id="compare-left-name">—</strong>
+        <small id="compare-left-cat">—</small>
+      </button>
+      <b class="compare-vs" aria-hidden="true">vs.</b>
+      <button type="button" class="compare-organ" id="compare-right">
+        <span class="compare-glyph" id="compare-right-glyph" aria-hidden="true">💻</span>
+        <span>Reference</span>
+        <strong id="compare-right-name">—</strong>
+        <small id="compare-right-cat">—</small>
+      </button>
+      <dl class="compare-facts">
+        <div><dt>Primary focus</dt><dd id="compare-focus">—</dd></div>
+        <div><dt>Domain</dt><dd id="compare-domain">—</dd></div>
+      </dl>
+      <button type="button" class="compare-swap" id="compare-swap" title="Switch reference specimen">Swap</button>
+      <button type="button" class="compare-close" id="compare-close" aria-label="Close comparison">×</button>
+    </section>
+
+    <!-- Study strip — mirrors Anatomy Atelier bottom cards (library domains) -->
+    <section class="study-strip-heading" aria-hidden="true">
+      <span>Study this specimen</span>
+      <em id="study-strip-specimen-name">—</em>
+    </section>
+    <section class="learning-cards study-strip" id="study-strip" aria-label="Specimen study resources">
+      <article class="curiosity-card">
+        <span>✿</span>
+        <p>Learning is an act<br/>of quiet observation.</p>
+        <em>Keep exploring!</em>
+      </article>
+
+      <!-- 1. Close-up study (Anatomy: Microscopic view) -->
+      <article class="discovery-card study-card">
+        <header>
+          <div>
+            <em id="micro-eyebrow">Close-up study</em>
+            <h3 id="micro-title">Micro-structure</h3>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+        </header>
+        <button type="button" class="study-visual micro-visual organ-card-image" id="micro-visual-btn" aria-label="Open close-up study">
+          <span class="micro-grid" id="micro-grid" aria-hidden="true"></span>
+          <span class="study-visual-glyph" id="micro-glyph">🔬</span>
+          <span class="study-visual-caption" id="micro-caption">Loupe view</span>
+        </button>
+        <button type="button" class="card-cta" id="micro-open-btn">Explore close-up <span aria-hidden="true">→</span></button>
+      </article>
+
+      <!-- 2. Compare domains (Anatomy: Compare organs) -->
+      <article class="discovery-card study-card">
+        <header>
+          <div>
+            <em>Compare domains</em>
+            <h3 id="compare-card-title">Domain comparison</h3>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
+        </header>
+        <button type="button" class="study-visual compare-visual organ-card-image" id="compare-visual-btn" aria-label="Open domain comparison">
+          <span class="compare-duo">
+            <span class="duo-a" id="compare-duo-a">A</span>
+            <span class="duo-vs">vs</span>
+            <span class="duo-b" id="compare-duo-b">B</span>
+          </span>
+          <span class="study-visual-caption" id="compare-card-blurb">Side-by-side domains</span>
+        </button>
+        <button type="button" class="card-cta" id="compare-open-btn">Open comparison <span aria-hidden="true">→</span></button>
+      </article>
+
+      <!-- 3. Workflow in motion (Anatomy: Function animation) -->
+      <article class="discovery-card study-card">
+        <header>
+          <div>
+            <em>Workflow in motion</em>
+            <h3 id="anim-card-title">Guided specimen tour</h3>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg>
+        </header>
+        <button type="button" class="function-visual organ-card-image" id="play-anim-card" aria-label="Play guided specimen tour">
+          <span class="function-visual-glyph" id="anim-card-glyph">🏷</span>
+          <i class="function-pulse" aria-hidden="true"></i>
+          <span class="play-badge" aria-hidden="true">▶</span>
+        </button>
+        <button type="button" class="card-cta" id="play-anim-cta">Play animation <span aria-hidden="true">→</span></button>
+      </article>
+
+      <!-- 4. Field challenges (Anatomy: Clinical notes) -->
+      <article class="discovery-card study-card">
+        <header>
+          <div>
+            <em id="conditions-eyebrow">Field challenges</em>
+            <h3>Common conditions</h3>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+        </header>
+        <ul class="conditions-list" id="conditions-list"></ul>
+        <button type="button" class="card-cta" id="conditions-open-lesson">See all notes <span aria-hidden="true">→</span></button>
+      </article>
+
+      <!-- 5. Where it works (Anatomy: system location) -->
+      <article class="discovery-card study-card system-card">
+        <header>
+          <div>
+            <em>Where it works</em>
+            <h3 id="system-card-title">Domain context</h3>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+        </header>
+        <button type="button" class="system-visual organ-card-image" id="system-visual-btn" aria-label="See where this domain works">
+          <span class="system-map" id="system-map"></span>
+          <span class="system-visual-glyph" id="system-card-glyph">◈</span>
+        </button>
+        <button type="button" class="card-cta" id="system-open-feature">See the system <span aria-hidden="true">→</span></button>
+      </article>
+    </section>
+
+    <!-- Practice tools (module-specific sandboxes) -->
+    <section class="learning-cards tools-strip" aria-label="Hands-on library practice tools">
+      <article id="card-call-number-sandbox">
+        <header>
+          <div>
+            <em>Interactive Tool</em>
+            <h3>Call # Constructor Sandbox</h3>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18h8"/><path d="M3 22h18"/><path d="M14 22a7 7 0 1 0 0-14h-1"/><path d="M9 14h2"/><path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z"/></svg>
+        </header>
+        <div id="call-sandbox-mount"></div>
+      </article>
+
+      <article id="card-marc-practice">
+        <header>
+          <div>
+            <em>Cataloging Tool</em>
+            <h3>MARC 21 Field Practice</h3>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/></svg>
+        </header>
+        <div id="marc-practice-mount"></div>
+      </article>
+
+      <article id="card-scenarios">
+        <header>
+          <div>
+            <em>Real-World Cases</em>
+            <h3>Librarian Scenario Cases</h3>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/></svg>
+        </header>
+        <div id="scenarios-mount"></div>
+      </article>
+
+      <article id="card-mustie">
+        <header>
+          <div>
+            <em>Collection Tool</em>
+            <h3>MUSTIE Weeding Simulator</h3>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+        </header>
+        <div id="mustie-mount"></div>
+      </article>
+    </section>
+
+  </main>
+
+  <!-- Editorial Feature Page (per-module deep-reading layer) -->
+  <div class="feature-page" id="feature-page" aria-hidden="true" role="dialog" aria-label="Module feature page"></div>
+
+  <!-- Reader / Guide Modal -->
+  <div class="modal-backdrop" id="reader-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="reader-modal-title">
+    <div class="modal-card reader-content">
+      <button class="modal-close" id="close-reader-modal" type="button" aria-label="Close librarian guide">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <h2 id="reader-modal-title" style="font-family:var(--font-serif); font-size:1.6rem; margin-bottom:16px;">Librarian Master Guide</h2>
+      <pre id="reader-text-content"></pre>
+    </div>
+  </div>
+
+  <!-- Study strip modal (close-up / system — Anatomy-style guided discovery) -->
+  <div class="modal-backdrop" id="study-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="study-modal-title">
+    <div class="modal-card study-modal-card">
+      <button class="modal-close" id="close-study-modal" type="button" aria-label="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <span class="modal-icon" id="study-modal-icon">🔬</span>
+      <em class="study-modal-kicker" id="study-modal-kicker">Guided discovery</em>
+      <h2 id="study-modal-title">Close-up study</h2>
+      <p id="study-modal-blurb" class="study-modal-blurb"></p>
+      <ul class="study-modal-points" id="study-modal-points"></ul>
+      <dl class="study-modal-facts" id="study-modal-facts"></dl>
+      <button type="button" class="lesson-button" id="study-modal-continue">Continue exploring</button>
+    </div>
+  </div>
+
+  <!-- Librarian Quiz Modal -->
+  <div class="modal-backdrop" id="quiz-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="quiz-title">
+    <div class="modal-card">
+      <button class="modal-close" id="close-quiz-modal" type="button" aria-label="Close quiz">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <h2 id="quiz-title" style="font-family:var(--font-serif); font-size:1.6rem; margin-bottom:16px;">Librarian Certification Quiz</h2>
+      <div id="quiz-container"></div>
+    </div>
+  </div>
+
+  <!-- 3D Hotspot Micro-Quiz Modal -->
+  <div class="modal-backdrop" id="hotspot-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="hotspot-modal-title">
+    <div class="modal-card">
+      <button class="modal-close" id="close-hotspot-modal" type="button" aria-label="Close observation">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <h2 id="hotspot-modal-title" style="font-family:var(--font-serif); font-size:1.5rem; margin-bottom:12px;">Specimen Feature Observation</h2>
+      <p id="hotspot-lesson-text" style="font-size:0.9rem; color:var(--text-muted); margin-bottom:16px;"></p>
+      <div id="hotspot-quiz-container"></div>
+    </div>
+  </div>
+
+  <!-- Progress & Certification Modal -->
+  <div class="modal-backdrop" id="cert-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="cert-modal-title">
+    <div class="modal-card">
+      <button class="modal-close" id="close-cert-modal" type="button" aria-label="Close certification progress">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <div style="text-align:center; padding:10px;">
+        <h2 id="cert-modal-title" style="font-family:var(--font-serif); font-size:1.8rem; color:var(--text-main);">MLS Master Certification Progress</h2>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:20px;">Official Archivist Mastery Record — Biblio Atelier</p>
+        
+        <div style="background:var(--bg-card); padding:16px; border-radius:12px; margin-bottom:20px; border:1px solid var(--border-color);">
+          <h3 style="font-size:1rem; font-weight:700;">Earned Certification Badges</h3>
+          <div id="badges-display-list" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:12px;"></div>
+        </div>
+
+        <div style="background:var(--bg-card); padding:16px; border-radius:12px; margin-bottom:20px; border:1px solid var(--border-color); text-align:left;">
+          <h3 style="font-size:1rem; font-weight:700;">Practice Panel Record</h3>
+          <div id="progress-display-list" class="progress-list"></div>
+        </div>
+
+        <button type="button" class="lesson-button" id="print-cert-btn" style="margin:0 auto;">Print Official Certificate 🖨️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Librarian Notes Modal -->
+  <div class="modal-backdrop" id="notes-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="notes-modal-title">
+    <div class="modal-card">
+      <button class="modal-close" id="close-notes-modal" type="button" aria-label="Close notes">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <h2 id="notes-modal-title" style="font-family:var(--font-serif); font-size:1.6rem; margin-bottom:12px;">Archivist Personal Notes</h2>
+      <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:14px;">Write and save your private library management notes:</p>
+      <textarea id="notes-textarea" rows="8" style="width:100%; padding:14px; border-radius:10px; margin-bottom:16px; resize:vertical; min-height:140px;"></textarea>
+      <button type="button" class="lesson-button" id="save-notes-btn" style="width:100%;">Save Notes</button>
+    </div>
+  </div>
+
+  <!-- Video Screen Recorder Modal -->
+  <div class="modal-backdrop" id="record-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="record-modal-title">
+    <div class="modal-card" style="max-width:480px;">
+      <button class="modal-close" id="close-record-modal" type="button" aria-label="Close record dialog">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <div style="text-align:center; padding:6px 4px 10px;">
+        <div style="width:52px; height:52px; border-radius:50%; background:color-mix(in srgb, var(--gold-accent) 18%, transparent); border:1px solid var(--gold-accent); display:grid; place-items:center; margin:0 auto 14px; font-size:1.6rem;">🎥</div>
+        <h2 id="record-modal-title" style="font-family:var(--font-serif); font-size:1.65rem; color:var(--text-main); margin-bottom:6px;">Record Video Demonstration</h2>
+        <p style="font-size:0.88rem; color:var(--text-muted); line-height:1.5; margin-bottom:20px;">
+          Choose how you would like to capture Biblio Atelier's 3D museum specimens and features:
+        </p>
+
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <button type="button" class="record-option-btn" id="start-auto-tour-record-btn">
+            <span style="font-size:1.4rem;">🎬</span>
+            <div style="text-align:left;">
+              <strong style="display:block; font-size:0.95rem; color:var(--text-main);">Automatic 18s Feature Tour</strong>
+              <small style="font-size:0.78rem; color:var(--text-muted);">Auto-records 3D orbit, layer toggle, isolate, cutaway, dual-plinth compare &amp; hotspot glide, then auto-downloads video.</small>
+            </div>
+          </button>
+
+          <button type="button" class="record-option-btn" id="start-manual-screen-record-btn">
+            <span style="font-size:1.4rem;">⏺️</span>
+            <div style="text-align:left;">
+              <strong style="display:block; font-size:0.95rem; color:var(--text-main);">Manual Full Screen Recording</strong>
+              <small style="font-size:0.78rem; color:var(--text-muted);">Records your full screen/tab while you interact, take quizzes, and navigate. Click Stop whenever you're ready.</small>
+            </div>
+          </button>
+        </div>
+
+        <div style="margin-top:18px; padding-top:14px; border-top:1px dashed var(--border-light); font-size:0.78rem; color:var(--text-light); text-align:left;">
+          💡 <strong>Windows Shortcut:</strong> You can also press <kbd style="background:var(--bg-card); border:1px solid var(--border-color); padding:2px 6px; border-radius:4px;">Win + Alt + R</kbd> anytime to record with Windows Game Bar.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Recording Status Toast Bar -->
+  <div class="recording-bar" id="recording-bar" hidden>
+    <div class="recording-indicator-dot"></div>
+    <span id="recording-bar-status">Recording in progress…</span>
+    <span class="recording-timer" id="recording-timer">00:00</span>
+    <button type="button" class="stop-rec-btn" id="stop-recording-btn">Stop &amp; Download Video</button>
+  </div>
+
+  <!-- Floating Record Action Button (Bottom Right) -->
+  <button type="button" class="floating-record-fab" id="floating-record-fab" title="Record Showcase Video Demo" aria-label="Record Video">
+    <span class="rec-dot"></span>
+    <span>Record Video Demo</span>
+  </button>
+
+  <!-- Interactive Folio Book Reader Modal -->
+  <div class="folio-reader-modal" id="book-reader-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Folio book reader"></div>
+
+  <!-- Scripts -->
+  <script src="js/utils.js?v=pure3"></script>
+  <script src="js/library-data.js?v=pure3"></script>
+  <script src="js/book-reader.js?v=pure3"></script>
+  <script src="js/walkthrough-engine.js?v=pure3"></script>
+  <script src="js/three-viewer.js?v=pure3"></script>
+  <script src="js/practice-engine.js?v=pure3"></script>
+  <script src="js/feature-page.js?v=pure3"></script>
+  <script src="js/app.js?v=pure3"></script>
+</body>
+</html>
