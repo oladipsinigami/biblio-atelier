@@ -1,7 +1,8 @@
 scratch/
-.ua/
+.git
+.vercel
+.env*
 .DS_Store
 Thumbs.db
 desktop.ini
-.vercel
-.env*
+*.md
